@@ -19,6 +19,7 @@
   },
   "author": "DharitrI",
   "license": "MIT",
+  "repository": "github:TerraDharitri/drt-js-sdk-wallet",
   "dependencies": {
     "@terradharitri/sdk-bls-wasm": "^0.0.1",
     "@noble/ed25519": "1.7.3",
