@@ -4,7 +4,7 @@ import { DigestAlgorithm } from "./constants";
 import { Err } from "../errors";
 
 export class Decryptor {
-  static decrypt(data: EncryptedData, password: string): Buffer {
+  public static decrypt(data: EncryptedData, password: string): Buffer {
     const kdfparams = data.kdfparams;
     const salt = Buffer.from(data.salt, "hex");
     const iv = Buffer.from(data.iv, "hex");
