@@ -1,4 +1,5 @@
 import * as fs from "fs";
+import axios from "axios";
 
 export async function readTestFile(filePath: string): Promise<string> {
     if (isOnBrowserTests()) {
@@ -21,7 +22,7 @@ export function isOnBrowserTests() {
 }
 
 export async function downloadTextFile(url: string) {
-    const response = await fetch(url);
-    const text = await response.text();
+    let response = await axios.get(url, { responseType: "text", transformResponse: [] });
+    let text = response.data.toString();
     return text;
 }

@@ -4,13 +4,14 @@ import { UserSecretKey } from "./userKeys";
 import { UserWallet } from "./userWallet";
 
 interface IUserSecretKey {
-    sign(message: Buffer | Uint8Array): Buffer;
+    sign(message: Buffer): Buffer;
     generatePublicKey(): IUserPublicKey;
 }
 
 interface IUserPublicKey {
-    toAddress(hrp?: string): { bech32(): string; };
+    toAddress(): { bech32(): string; };
 }
+
 
 /**
  * ed25519 signer
@@ -22,8 +23,8 @@ export class UserSigner {
         this.secretKey = secretKey;
     }
 
-    static fromWallet(keyFileObject: any, password: string, addressIndex?: number): UserSigner {
-        const secretKey = UserWallet.decrypt(keyFileObject, password, addressIndex);
+    static fromWallet(keyFileObject: any, password: string): UserSigner {
+        let secretKey = UserWallet.decryptSecretKey(keyFileObject, password);
         return new UserSigner(secretKey);
     }
 
@@ -32,7 +33,7 @@ export class UserSigner {
         return new UserSigner(secretKey);
     }
 
-    async sign(data: Buffer | Uint8Array): Promise<Buffer> {
+    async sign(data: Buffer): Promise<Buffer> {
         try {
             const signature = this.secretKey.sign(data);
             return signature;
@@ -44,8 +45,8 @@ export class UserSigner {
     /**
      * Gets the address of the signer.
      */
-    getAddress(hrp?: string): UserAddress {
-        const bech32 = this.secretKey.generatePublicKey().toAddress(hrp).bech32();
-        return UserAddress.newFromBech32(bech32);
+    getAddress(): UserAddress {
+        const bech32 = this.secretKey.generatePublicKey().toAddress().bech32();
+        return UserAddress.fromBech32(bech32);
     }
 }
