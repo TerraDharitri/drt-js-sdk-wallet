@@ -1,12 +1,55 @@
-# This package was integrated into [sdk-core](https://www.npmjs.com/package/@dharitri/sdk-core) and will soon be deprecated
-To utilize the functionality from the unified @dharitri/sdk-core library, please update the existing import statements within your project.
+# Dharitri SDK for JavaScript and TypeScript: wallet components
 
-For example:
-``` 
-import { UserSigner } from "@dharitri/sdk-wallet";
-```
-should be changed to:
-```
-import { UserSigner } from "@dharitri/sdk-core";
+Wallet components (generation, signing) for TypeScript (JavaScript).
 
+## Distribution
+
+[npm](https://www.npmjs.com/package/@terradharitri/sdk-wallet)
+
+## Installation
+
+`sdk-wallet` is delivered via [npm](https://www.npmjs.com/package/@terradharitri/sdk-wallet), therefore it can be installed as follows:
+
+```
+npm install @terradharitri/sdk-wallet
+```
+
+## Development
+
+Feel free to skip this section if you are not a contributor.
+
+### Additional dependencies
+
+Instanbul, for code coverage:
+
+```
+npm install --no-save nyc
+```
+
+### Building the library
+
+In order to compile `sdk-wallet`, run the following:
+
+```
+npm install
+npm run compile
+npm run compile-browser
+```
+
+### Running the tests
+
+#### On NodeJS
+
+In order to run the tests **on NodeJS**, do as follows:
+
+```
+npm run test
+```
+
+#### In the browser
+
+In order to run the tests **in the browser**, do as follows:
+
+```
+npm run browser-tests
 ```

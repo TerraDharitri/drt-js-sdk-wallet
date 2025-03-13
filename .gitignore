@@ -6,3 +6,4 @@ node_modules/
 tags
 coverage/
 .nyc_output
+config.bat
