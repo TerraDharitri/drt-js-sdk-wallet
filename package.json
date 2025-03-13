@@ -17,6 +17,10 @@
     "pretest": "npm run compile",
     "prepare": "npm run compile"
   },
+  "repository": {
+    "type": "git",
+    "url": "github:TerraDharitri/drt-js-sdk-wallet"
+  },
   "author": "Dharitri",
   "license": "MIT",
   "dependencies": {
