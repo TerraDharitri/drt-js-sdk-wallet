@@ -31,7 +31,7 @@ export class ValidatorSecretKey {
     private readonly secretKey: any;
     private readonly publicKey: any;
 
-    constructor(buffer: Buffer | Uint8Array) {
+    constructor(buffer: Buffer) {
         BLS.guardInitialized();
         guardLength(buffer, VALIDATOR_SECRETKEY_LENGTH);
 
@@ -49,7 +49,7 @@ export class ValidatorSecretKey {
         return new ValidatorPublicKey(buffer);
     }
 
-    sign(message: Buffer | Uint8Array): Buffer {
+    sign(message: Buffer): Buffer {
         let signatureObject = this.secretKey.sign(message);
         let signature = Buffer.from(signatureObject.serialize());
         return signature;
@@ -67,10 +67,10 @@ export class ValidatorSecretKey {
 export class ValidatorPublicKey {
     private readonly buffer: Buffer;
 
-    constructor(buffer: Buffer | Uint8Array) {
+    constructor(buffer: Buffer) {
         guardLength(buffer, VALIDATOR_PUBKEY_LENGTH);
 
-        this.buffer = Buffer.from(buffer);
+        this.buffer = buffer;
     }
 
     hex(): string {

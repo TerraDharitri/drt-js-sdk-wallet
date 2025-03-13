@@ -65,27 +65,8 @@ export class UserWallet {
         });
     }
 
-    static decrypt(keyFileObject: any, password: string, addressIndex?: number): UserSecretKey {
-        const kind = keyFileObject.kind || UserWalletKind.SecretKey;
-
-        if (kind == UserWalletKind.SecretKey) {
-            if (addressIndex !== undefined) {
-                throw new Err("addressIndex must not be provided when kind == 'secretKey'");
-            }
-
-            return UserWallet.decryptSecretKey(keyFileObject, password);
-        }
-
-        if (kind == UserWalletKind.Mnemonic) {
-            const mnemonic = this.decryptMnemonic(keyFileObject, password);
-            return mnemonic.deriveKey(addressIndex || 0);
-        }
-
-        throw new Err(`Unknown kind: ${kind}`);
-    }
-
     /**
-     * Copied from: https://github.com/dharitri/drt-deprecated-core-js/blob/v1.28.0/src/account.js#L42
+     * Copied from: https://github.com/TerraDharitri/drt-deprecated-core-js/blob/v1.28.0/src/account.js#L42
      * Notes: adjustements (code refactoring, no change in logic), in terms of: 
      *  - typing (since this is the TypeScript version)
      *  - error handling (in line with sdk-core's error system)
@@ -95,11 +76,7 @@ export class UserWallet {
      * From an encrypted keyfile, given the password, loads the secret key and the public key.
      */
     static decryptSecretKey(keyFileObject: any, password: string): UserSecretKey {
-        // Here, we check the "kind" field only for files that have it. Older keystore files (holding only secret keys) do not have this field.
-        const kind = keyFileObject.kind;
-        if (kind && kind !== UserWalletKind.SecretKey){
-            throw new Err(`Expected keystore kind to be ${UserWalletKind.SecretKey}, but it was ${kind}.`);
-        }
+        // Here, we do not check the "kind" field. Older keystore files (holding only secret keys) do not have this field.
 
         const encryptedData = UserWallet.edFromJSON(keyFileObject);
 
@@ -115,7 +92,7 @@ export class UserWallet {
 
     static decryptMnemonic(keyFileObject: any, password: string): Mnemonic {
         if (keyFileObject.kind != UserWalletKind.Mnemonic) {
-            throw new Err(`Expected keystore kind to be ${UserWalletKind.Mnemonic}, but it was ${keyFileObject.kind}.`);
+            throw new Err(`Expected kind to be ${UserWalletKind.Mnemonic}, but it was ${keyFileObject.kind}.`);
         }
 
         const encryptedData = UserWallet.edFromJSON(keyFileObject);
@@ -146,15 +123,15 @@ export class UserWallet {
     /**
      * Converts the encrypted keyfile to plain JavaScript object.
      */
-    toJSON(addressHrp?: string): any {
+    toJSON(): any {
         if (this.kind == UserWalletKind.SecretKey) {
-            return this.toJSONWhenKindIsSecretKey(addressHrp);
+            return this.toJSONWhenKindIsSecretKey();
         }
 
         return this.toJSONWhenKindIsMnemonic();
     }
 
-    private toJSONWhenKindIsSecretKey(addressHrp?: string): any {
+    private toJSONWhenKindIsSecretKey(): any {
         if (!this.publicKeyWhenKindIsSecretKey) {
             throw new Err("Public key isn't available");
         }
@@ -166,7 +143,7 @@ export class UserWallet {
             kind: this.kind,
             id: this.encryptedData.id,
             address: this.publicKeyWhenKindIsSecretKey.hex(),
-            bech32: this.publicKeyWhenKindIsSecretKey.toAddress(addressHrp).toString(),
+            bech32: this.publicKeyWhenKindIsSecretKey.toAddress().toString(),
             crypto: cryptoSection
         };
 

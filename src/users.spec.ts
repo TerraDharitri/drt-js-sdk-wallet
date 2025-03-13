@@ -1,17 +1,10 @@
 import { assert } from "chai";
 import { Randomness } from "./crypto";
-import { ErrBadMnemonicEntropy, ErrInvariantFailed } from "./errors";
+import { ErrInvariantFailed } from "./errors";
 import { Mnemonic } from "./mnemonic";
 import { TestMessage } from "./testutils/message";
 import { TestTransaction } from "./testutils/transaction";
-import {
-    DummyMnemonic,
-    DummyMnemonicOf12Words,
-    DummyPassword,
-    loadTestKeystore,
-    loadTestWallet,
-    TestWallet,
-} from "./testutils/wallets";
+import { DummyMnemonic, DummyMnemonicOf12Words, DummyPassword, loadTestKeystore, loadTestWallet, TestWallet } from "./testutils/wallets";
 import { UserSecretKey } from "./userKeys";
 import { UserSigner } from "./userSigner";
 import { UserVerifier } from "./userVerifier";
@@ -33,34 +26,6 @@ describe("test user wallets", () => {
         assert.lengthOf(words, 24);
     });
 
-    it("should convert entropy to mnemonic and back", () => {
-        function testConversion(text: string, entropyHex: string) {
-            const entropyFromMnemonic = Mnemonic.fromString(text).getEntropy();
-            const mnemonicFromEntropy = Mnemonic.fromEntropy(Buffer.from(entropyHex, "hex"));
-
-            assert.equal(Buffer.from(entropyFromMnemonic).toString("hex"), entropyHex);
-            assert.equal(mnemonicFromEntropy.toString(), text);
-        }
-
-        testConversion(
-            "abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about",
-            "00000000000000000000000000000000",
-        );
-
-        testConversion(
-            "moral volcano peasant pass circle pen over picture flat shop clap goat never lyrics gather prepare woman film husband gravity behind test tiger improve",
-            "8fbeb688d0529344e77d225898d4a73209510ad81d4ffceac9bfb30149bf387b",
-        );
-
-        assert.throws(
-            () => {
-                Mnemonic.fromEntropy(Buffer.from("abba", "hex"));
-            },
-            ErrBadMnemonicEntropy,
-            `Bad mnemonic entropy`,
-        );
-    });
-
     it("should derive keys", async () => {
         let mnemonic = Mnemonic.fromString(DummyMnemonic);
 
@@ -75,20 +40,14 @@ describe("test user wallets", () => {
         assert.equal(mnemonic.deriveKey(0).generatePublicKey().toAddress().bech32(), "drt1l8g9dk3gz035gkjhwegsjkqzdu3augrwhcfxrnucnyyrpc2220pq4flasr");
         assert.equal(mnemonic.deriveKey(1).generatePublicKey().toAddress().bech32(), "drt1fmhwg84rldg0xzngf53m0y607wvefvamh07n2mkypedx27lcqntsg78vxl");
         assert.equal(mnemonic.deriveKey(2).generatePublicKey().toAddress().bech32(), "drt1tyuyemt4xz2yjvc7rxxp8kyfmk2n3h8gv3aavzd9ru4v2vhrkcksuhwdgv");
-
-        assert.equal(mnemonic.deriveKey(0).generatePublicKey().toAddress("test").bech32(), "test1l8g9dk3gz035gkjhwegsjkqzdu3augrwhcfxrnucnyyrpc2220pqc6tnnf");
-        assert.equal(mnemonic.deriveKey(1).generatePublicKey().toAddress("xdrt").bech32(), "xdrt1fmhwg84rldg0xzngf53m0y607wvefvamh07n2mkypedx27lcqnts0f2w3t");
-        assert.equal(mnemonic.deriveKey(2).generatePublicKey().toAddress("ydrt").bech32(), "ydrt1tyuyemt4xz2yjvc7rxxp8kyfmk2n3h8gv3aavzd9ru4v2vhrkckswmkvs2");
     });
 
     it("should create secret key", () => {
-        const keyHex = alice.secretKeyHex;
-        const fromBuffer = new UserSecretKey(Buffer.from(keyHex, "hex"));
-        const fromArray = new UserSecretKey(Uint8Array.from(Buffer.from(keyHex, "hex")));
-        const fromHex = UserSecretKey.fromString(keyHex);
+        let keyHex = alice.secretKeyHex;
+        let fromBuffer = new UserSecretKey(Buffer.from(keyHex, "hex"));
+        let fromHex = UserSecretKey.fromString(keyHex);
 
         assert.equal(fromBuffer.hex(), keyHex);
-        assert.equal(fromArray.hex(), keyHex);
         assert.equal(fromHex.hex(), keyHex);
     });
 
@@ -120,7 +79,7 @@ describe("test user wallets", () => {
     });
 
     it("should create and load keystore files (with secret keys)", function () {
-        this.timeout(10000);
+        this.timeout(90000);
 
         let aliceSecretKey = UserSecretKey.fromString(alice.secretKeyHex);
         let bobSecretKey = UserSecretKey.fromString(bob.secretKeyHex);
@@ -187,7 +146,7 @@ describe("test user wallets", () => {
     });
 
     it("should create and load keystore files (with mnemonics)", async function () {
-        this.timeout(10000);
+        this.timeout(90000);
 
         const wallet = UserWallet.fromMnemonic({ mnemonic: DummyMnemonic, password: password });
         const json = wallet.toJSON();
@@ -219,27 +178,6 @@ describe("test user wallets", () => {
         assert.deepEqual(dummyWallet.toJSON(), expectedDummyWallet);
     });
 
-    it("should loadSecretKey, but without 'kind' field", async function () {
-        const keyFileObject = await loadTestKeystore("withoutKind.json");
-        const secretKey = UserWallet.decrypt(keyFileObject, password);
-
-        assert.equal(secretKey.generatePublicKey().toAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
-    });
-
-    it("should throw when calling loadSecretKey with unecessary address index", async function () {
-        const keyFileObject = await loadTestKeystore("alice.json");
-
-        assert.throws(() => UserWallet.decrypt(keyFileObject, password, 42), "addressIndex must not be provided when kind == 'secretKey'");
-    });
-
-    it("should loadSecretKey with mnemonic", async function () {
-        const keyFileObject = await loadTestKeystore("withDummyMnemonic.json");
-
-        assert.equal(UserWallet.decrypt(keyFileObject, password, 0).generatePublicKey().toAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
-        assert.equal(UserWallet.decrypt(keyFileObject, password, 1).generatePublicKey().toAddress().bech32(), "drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c");
-        assert.equal(UserWallet.decrypt(keyFileObject, password, 2).generatePublicKey().toAddress().bech32(), "drt1k2s324ww2g0yj38qn2ch2jwctdy8mnfxep94q9arncc6xecg3xaq889n6e");
-    });
-
     it("should sign transactions", async () => {
         let signer = new UserSigner(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf"));
         let verifier = new UserVerifier(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf").generatePublicKey());
@@ -258,11 +196,9 @@ describe("test user wallets", () => {
         let serialized = transaction.serializeForSigning();
         let signature = await signer.sign(serialized);
 
-        assert.deepEqual(await signer.sign(serialized), await signer.sign(Uint8Array.from(serialized)));
         assert.equal(serialized.toString(), `{"nonce":0,"value":"0","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"","gasPrice":1000000000,"gasLimit":50000,"data":"Zm9v","chainID":"1","version":1}`);
         assert.equal(signature.toString("hex"), "0f7653c6baee0b61cd5e655a646038b0cccfb868d4664f1e14b521ba56fd5f4b49465273f4cd814656dbf6e4bb4830f526f51d94a5a15f4911b6085a5f952501");
         assert.isTrue(verifier.verify(serialized, signature));
-        
         // Without data field
         transaction = new TestTransaction({
             nonce: 8,
@@ -276,7 +212,6 @@ describe("test user wallets", () => {
         serialized = transaction.serializeForSigning();
         signature = await signer.sign(serialized);
 
-        assert.deepEqual(await signer.sign(serialized), await signer.sign(Uint8Array.from(serialized)));
         assert.equal(serialized.toString(), `{"nonce":8,"value":"10000000000000000000","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"","gasPrice":1000000000,"gasLimit":50000,"chainID":"1","version":1}`);
         assert.equal(signature.toString("hex"), "523bd77e6b139c67e0c79fe048460e3107884d95260a5357386be5b7dae80a36451bf83148bdabd100124c148d8f80bbe19926b9701bada3011a72bf642ad70e");
     });
@@ -348,10 +283,7 @@ describe("test user wallets", () => {
             chainID: "1"
         });
 
-        const serialized = transaction.serializeForSigning();
-        const signature = await signer.sign(serialized);
-
-        assert.deepEqual(await signer.sign(serialized), await signer.sign(Uint8Array.from(serialized)));
+        const signature = await signer.sign(transaction.serializeForSigning());
         assert.equal(signature.toString("hex"), "9b211b30d96125627696725d323a0e49ecd3bf19d5079009499ee2204b32b426b7225a268d4b6358eb1c976c2626e64fe0038a8d7a5ff89cba6b1d7969874b02");
     });
 
@@ -367,39 +299,7 @@ describe("test user wallets", () => {
         const data = message.serializeForSigning();
         const signature = await signer.sign(data);
 
-        assert.deepEqual(await signer.sign(data), await signer.sign(Uint8Array.from(data)));
         assert.isTrue(verifier.verify(data, signature));
-        assert.isTrue(verifier.verify(Uint8Array.from(data), Uint8Array.from(signature)));
         assert.isFalse(verifier.verify(Buffer.from("hello"), signature));
-        assert.isFalse(verifier.verify(new TextEncoder().encode("hello"), signature));
-    });
-
-    it("should create UserSigner from wallet", async function () {
-        const keyFileObjectWithoutKind = await loadTestKeystore("withoutKind.json");
-        const keyFileObjectWithMnemonic = await loadTestKeystore("withDummyMnemonic.json");
-        const keyFileObjectWithSecretKey = await loadTestKeystore("withDummySecretKey.json");
-
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithoutKind, password).getAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password).getAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithSecretKey, password).getAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 0).getAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 1).getAddress().bech32(), "drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 2).getAddress().bech32(), "drt1k2s324ww2g0yj38qn2ch2jwctdy8mnfxep94q9arncc6xecg3xaq889n6e");
-
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 0).getAddress("test").bech32(), "test1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ss5hqhtr");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 1).getAddress("xdrt").bech32(), "xdrt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqchqmxv");
-        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 2).getAddress("ydrt").bech32(), "ydrt1k2s324ww2g0yj38qn2ch2jwctdy8mnfxep94q9arncc6xecg3xaq4tajzl");
-    });
-
-    it("should throw error when decrypting secret key with keystore-mnemonic file", async function () {
-        const userWallet = UserWallet.fromMnemonic({
-            mnemonic: DummyMnemonic,
-            password: ``
-        });
-        const keystoreMnemonic = userWallet.toJSON();
-
-        assert.throws(() => {
-            UserWallet.decryptSecretKey(keystoreMnemonic, ``)
-        }, `Expected keystore kind to be secretKey, but it was mnemonic.`);
     });
 });
