@@ -5,7 +5,6 @@ import { Mnemonic } from "./mnemonic";
 import { TestMessage } from "./testutils/message";
 import { TestTransaction } from "./testutils/transaction";
 import { DummyMnemonic, DummyMnemonicOf12Words, DummyPassword, loadTestKeystore, loadTestWallet, TestWallet } from "./testutils/wallets";
-import { UserAddress } from "./userAddress";
 import { UserSecretKey } from "./userKeys";
 import { UserSigner } from "./userSigner";
 import { UserVerifier } from "./userVerifier";
@@ -182,7 +181,6 @@ describe("test user wallets", () => {
     it("should sign transactions", async () => {
         let signer = new UserSigner(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf"));
         let verifier = new UserVerifier(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf").generatePublicKey());
-        let sender = UserAddress.fromBech32("drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu");
 
         // With data field
         let transaction = new TestTransaction({
@@ -192,15 +190,15 @@ describe("test user wallets", () => {
             gasPrice: 1000000000,
             gasLimit: 50000,
             data: "foo",
-            chainID: "1"
+            chainID: "1",
         });
 
-        let serialized = transaction.serializeForSigning(sender).toString();
-        await signer.sign(transaction);
+        let serialized = transaction.serializeForSigning();
+        let signature = await signer.sign(serialized);
 
-        assert.equal(serialized, `{"nonce":0,"value":"0","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu","gasPrice":1000000000,"gasLimit":50000,"data":"Zm9v","chainID":"1","version":1}`);
-        assert.equal(transaction.getSignature().hex(), "0f9b9db10f240c2528ebcc193016d02a3a2c4472bf4808a364c8a2a6f9c56f22582367bb64429a7ac4fdd851f9312b4ffc32b1c0e734dbb69f118ad1f1912a01");
-        assert.isTrue(verifier.verify(transaction));
+        assert.equal(serialized.toString(), `{"nonce":0,"value":"0","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"","gasPrice":1000000000,"gasLimit":50000,"data":"Zm9v","chainID":"1","version":1}`);
+        assert.equal(signature.toString("hex"), "0f7653c6baee0b61cd5e655a646038b0cccfb868d4664f1e14b521ba56fd5f4b49465273f4cd814656dbf6e4bb4830f526f51d94a5a15f4911b6085a5f952501");
+        assert.isTrue(verifier.verify(serialized, signature));
         // Without data field
         transaction = new TestTransaction({
             nonce: 8,
@@ -211,17 +209,71 @@ describe("test user wallets", () => {
             chainID: "1"
         });
 
-        serialized = transaction.serializeForSigning(sender).toString();
-        await signer.sign(transaction);
+        serialized = transaction.serializeForSigning();
+        signature = await signer.sign(serialized);
 
-        assert.equal(serialized, `{"nonce":8,"value":"10000000000000000000","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu","gasPrice":1000000000,"gasLimit":50000,"chainID":"1","version":1}`);
-        assert.equal(transaction.getSignature().hex(), "6269b499f9b730d2cc7ae7ffe0ee683d993051a8d090a5fc86b6a8679e416449af73893c34ead5f28768ba5d0e2cc60b5d2483060dd400fdefecedacc266e60e");
+        assert.equal(serialized.toString(), `{"nonce":8,"value":"10000000000000000000","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"","gasPrice":1000000000,"gasLimit":50000,"chainID":"1","version":1}`);
+        assert.equal(signature.toString("hex"), "523bd77e6b139c67e0c79fe048460e3107884d95260a5357386be5b7dae80a36451bf83148bdabd100124c148d8f80bbe19926b9701bada3011a72bf642ad70e");
+    });
+
+    it("guardian should sign transactions from PEM", async () => {
+        // bob is the guardian
+        let signer = new UserSigner(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf"));
+        let verifier = new UserVerifier(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf").generatePublicKey());
+        let guardianSigner = new UserSigner(UserSecretKey.fromPem(bob.pemFileText));
+
+        // With data field
+        let transaction = new TestTransaction({
+            nonce: 0,
+            value: "0",
+            receiver: "drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha",
+            sender: "drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu",
+            gasPrice: 1000000000,
+            gasLimit: 50000,
+            data: "foo",
+            chainID: "1",
+            guardian: "drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c",
+            options: 2,
+            version: 2
+        });
+
+        let serialized = transaction.serializeForSigning();
+        let signature = await signer.sign(serialized);
+        let guardianSignature = await guardianSigner.sign(serialized);
+
+        assert.equal(serialized.toString(), `{"nonce":0,"value":"0","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu","guardian":"drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c","gasPrice":1000000000,"gasLimit":50000,"data":"Zm9v","chainID":"1","options":2,"version":2}`);
+        assert.equal(signature.toString("hex"), "393c8d4bb22ae1298d09b61d7257aba69c9a7233c9cb99a9142caba25ffac5da35a3fafbc572545c09dc38d46c7167c00dd1189fb77bb781cf1901b009137201");
+        assert.equal(guardianSignature.toString("hex"), "b135da0376f6cde58f78fd48c28d159ed34c1679305d3b151cbeb10cc635e927da1d66b9b7d24ae31e02c52052ca7fd311635c186ad598b57a1768cbfb1d320c");
+        assert.isTrue(verifier.verify(serialized, signature));
+
+        // Without data field
+        transaction = new TestTransaction({
+            nonce: 8,
+            value: "10000000000000000000",
+            receiver: "drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha",
+            sender: "drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu",
+            gasPrice: 1000000000,
+            gasLimit: 50000,
+            chainID: "1",
+            guardian: "drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c",
+            options: 2,
+            version: 2,
+        });
+
+        serialized = transaction.serializeForSigning();
+        signature = await signer.sign(serialized);
+        guardianSignature = await guardianSigner.sign(serialized);
+
+        assert.equal(serialized.toString(), `{"nonce":8,"value":"10000000000000000000","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"drt1l453hd0gt5gzdp7czpuall8ggt2dcv5zwmfdf3sd3lguxseux2fsxvluwu","guardian":"drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c","gasPrice":1000000000,"gasLimit":50000,"chainID":"1","options":2,"version":2}`);
+        assert.equal(signature.toString("hex"), "f1a724936284274e685f05db637ccdec3fb29ab46f60ffcd7d67bd0baaf6dc59cdedc13dbdfee401ce129df8a5c35965019e8765f502b4ae53b9a406d3be7707");
+        assert.equal(guardianSignature.toString("hex"), "f059e2fe9014eea0fac1f5afdc25ee76cf5dc6506c0200fc9966db2380f2bd56c2f4bf920bad2ba420ab097dd56f1c4215ce7b68b88a5cc61857e00275693d08");
+        assert.isTrue(verifier.verify(serialized, signature));
     });
 
     it("should sign transactions using PEM files", async () => {
-        let signer = UserSigner.fromPem(alice.pemFileText);
+        const signer = UserSigner.fromPem(alice.pemFileText);
 
-        let transaction = new TestTransaction({
+        const transaction = new TestTransaction({
             nonce: 0,
             value: "0",
             receiver: "drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha",
@@ -231,20 +283,23 @@ describe("test user wallets", () => {
             chainID: "1"
         });
 
-        await signer.sign(transaction);
-        assert.equal(transaction.getSignature().hex(), "fa209f3ff1325c467d5244aea6902bf498489f769c7dddffdf33d103b13afa931fe32c06a02a13e6c570f7ecc3464aee8edb6a19c80883ca4c8e36e80e95af0e");
+        const signature = await signer.sign(transaction.serializeForSigning());
+        assert.equal(signature.toString("hex"), "9b211b30d96125627696725d323a0e49ecd3bf19d5079009499ee2204b32b426b7225a268d4b6358eb1c976c2626e64fe0038a8d7a5ff89cba6b1d7969874b02");
     });
 
-    it("signs a general message", function () {
+    it("signs a general message", async function () {
         let signer = new UserSigner(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf"));
         let verifier = new UserVerifier(UserSecretKey.fromString("1a927e2af5306a9bb2ea777f73e06ecc0ac9aaa72fb4ea3fecf659451394cccf").generatePublicKey());
+
         const message = new TestMessage({
             foo: "hello",
             bar: "world"
         });
 
-        signer.sign(message);
-        assert.isNotEmpty(message.signature);
-        assert.isTrue(verifier.verify(message));
+        const data = message.serializeForSigning();
+        const signature = await signer.sign(data);
+
+        assert.isTrue(verifier.verify(data, signature));
+        assert.isFalse(verifier.verify(Buffer.from("hello"), signature));
     });
 });
