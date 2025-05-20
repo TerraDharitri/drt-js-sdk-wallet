@@ -1,29 +1,25 @@
-import * as ed from "@noble/ed25519";
-import { sha512 } from "@noble/hashes/sha512";
+import * as tweetnacl from "tweetnacl";
+import { UserAddress } from "./userAddress";
 import { guardLength } from "./assertions";
 import { parseUserKey } from "./pem";
-import { UserAddress } from "./userAddress";
+import { IAddress } from "./interface";
 
 export const USER_SEED_LENGTH = 32;
 export const USER_PUBKEY_LENGTH = 32;
 
-// See: https://github.com/paulmillr/noble-ed25519
-// In a future version of sdk-wallet, we'll switch to using the async functions of noble-ed25519.
-ed.utils.sha512Sync = (...m) => sha512(ed.utils.concatBytes(...m));
-
 export class UserSecretKey {
     private readonly buffer: Buffer;
 
-    constructor(buffer: Uint8Array) {
+    constructor(buffer: Buffer) {
         guardLength(buffer, USER_SEED_LENGTH);
 
-        this.buffer = Buffer.from(buffer);
+        this.buffer = buffer;
     }
 
     static fromString(value: string): UserSecretKey {
         guardLength(value, USER_SEED_LENGTH * 2);
 
-        const buffer = Buffer.from(value, "hex");
+        let buffer = Buffer.from(value, "hex");
         return new UserSecretKey(buffer);
     }
 
@@ -32,12 +28,18 @@ export class UserSecretKey {
     }
 
     generatePublicKey(): UserPublicKey {
-        const buffer = ed.sync.getPublicKey(new Uint8Array(this.buffer));
+        let keyPair = tweetnacl.sign.keyPair.fromSeed(new Uint8Array(this.buffer));
+        let buffer = Buffer.from(keyPair.publicKey);
         return new UserPublicKey(buffer);
     }
 
-    sign(message: Buffer | Uint8Array): Buffer {
-        const signature = ed.sync.sign(new Uint8Array(message), new Uint8Array(this.buffer));
+    sign(message: Buffer): Buffer {
+        let pair = tweetnacl.sign.keyPair.fromSeed(new Uint8Array(this.buffer));
+        let signingKey = pair.secretKey;
+        let signature = tweetnacl.sign(new Uint8Array(message), signingKey);
+        // "tweetnacl.sign()" returns the concatenated [signature, message], therfore we remove the appended message:
+        signature = signature.slice(0, signature.length - message.length);
+
         return Buffer.from(signature);
     }
 
@@ -53,17 +55,18 @@ export class UserSecretKey {
 export class UserPublicKey {
     private readonly buffer: Buffer;
 
-    constructor(buffer: Uint8Array) {
+    constructor(buffer: Buffer) {
         guardLength(buffer, USER_PUBKEY_LENGTH);
-
-        this.buffer = Buffer.from(buffer);
+        
+        this.buffer = buffer;
     }
 
-    verify(data: Buffer | Uint8Array, signature: Buffer | Uint8Array): boolean {
+    verify(message: Buffer, signature: Buffer): boolean {
         try {
-            const ok = ed.sync.verify(new Uint8Array(signature), new Uint8Array(data), new Uint8Array(this.buffer));
-            return ok;
-        } catch (err: any) {
+            const unopenedMessage = Buffer.concat([signature, message]);
+            const unsignedMessage = tweetnacl.sign.open(unopenedMessage, this.buffer);
+            return unsignedMessage != null;
+        } catch (err) {
             console.error(err);
             return false;
         }
@@ -73,8 +76,8 @@ export class UserPublicKey {
         return this.buffer.toString("hex");
     }
 
-    toAddress(hrp?: string): UserAddress {
-        return new UserAddress(this.buffer, hrp);
+    toAddress(): IAddress {
+        return new UserAddress(this.buffer);
     }
 
     valueOf(): Buffer {
