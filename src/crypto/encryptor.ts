@@ -1,21 +1,11 @@
 import crypto from "crypto";
-import { CipherAlgorithm, DigestAlgorithm, KeyDerivationFunction } from "./constants";
-import { ScryptKeyDerivationParams } from "./derivationParams";
-import { EncryptedData } from "./encryptedData";
 import { Randomness } from "./randomness";
-
-interface IRandomness {
-  id: string;
-  iv: Buffer;
-  salt: Buffer;
-}
-
-export enum EncryptorVersion {
-  V4 = 4,
-}
+import { ScryptKeyDerivationParams } from "./derivationParams";
+import { CipherAlgorithm, DigestAlgorithm, Version, KeyDerivationFunction } from "./constants";
+import {EncryptedData} from "./encryptedData";
 
 export class Encryptor {
-  static encrypt(data: Buffer, password: string, randomness: IRandomness = new Randomness()): EncryptedData {
+  static encrypt(data: Buffer, password: string, randomness: Randomness = new Randomness()): EncryptedData {
     const kdParams = new ScryptKeyDerivationParams();
     const derivedKey = kdParams.generateDerivedKey(Buffer.from(password), randomness.salt);
     const derivedKeyFirstHalf = derivedKey.slice(0, 16);
@@ -26,7 +16,7 @@ export class Encryptor {
     const mac = crypto.createHmac(DigestAlgorithm, derivedKeySecondHalf).update(ciphertext).digest();
 
     return new EncryptedData({
-      version: EncryptorVersion.V4,
+      version: Version,
       id: randomness.id,
       ciphertext: ciphertext.toString('hex'),
       iv: randomness.iv.toString('hex'),
