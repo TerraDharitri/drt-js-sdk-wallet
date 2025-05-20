@@ -1,6 +1,6 @@
 {
   "name": "@terradharitri/sdk-wallet",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "Wallet components for Dharitri",
   "main": "out/index.js",
   "types": "out/index.d.js",
