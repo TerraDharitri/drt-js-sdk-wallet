@@ -4,8 +4,8 @@
 export class Signature {
     private readonly buffer: Buffer;
 
-    constructor(buffer: Buffer | Uint8Array) {
-        this.buffer = Buffer.from(buffer);
+    constructor(buffer: Buffer) {
+        this.buffer = buffer;
     }
 
     hex() {
