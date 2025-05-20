@@ -1,20 +1,17 @@
+# Dharitri SDK for JavaScript and TypeScript: wallet components
 
-
-Core wallet components (generation, signing) for TypeScript (JavaScript). 
-
-## CHANGELOG
-
+Wallet components (generation, signing) for TypeScript (JavaScript). 
 
 ## Distribution
 
-[npm](https://www.npmjs.com/package/@terradharitri/drtjs-walletcore)
+[npm](https://www.npmjs.com/package/@terradharitri/sdk-wallet)
 
 ## Installation
 
-`drtjs-walletcore` is delivered via [npm](https://www.npmjs.com/package/@terradharitri/drtjs-walletcore), therefore it can be installed as follows:
+`sdk-wallet` is delivered via [npm](https://www.npmjs.com/package/@terradharitri/sdk-wallet), therefore it can be installed as follows:
 
 ```
-npm install @terradharitri/drtjs-walletcore
+npm install @terradharitri/sdk-wallet
 ```
 
 ## Development
@@ -23,7 +20,7 @@ Feel free to skip this section if you are not a contributor.
 
 ### Prerequisites
 
-`browserify` is required to compile the browser-friendly versions of `drtjs-walletcore`. It can be installed as follows:
+`browserify` is required to compile the browser-friendly versions of `sdk-wallet`. It can be installed as follows:
 
 ```
 npm install --global browserify
@@ -31,13 +28,12 @@ npm install --global browserify
 
 ### Building the library
 
-In order to compile `drtjs-walletcore`, run the following:
+In order to compile `sdk-wallet`, run the following:
 
 ```
 npm install
 npm run compile
 npm run compile-browser
-npm run compile-browser-min
 ```
 
 ### Running the tests
