@@ -40,6 +40,10 @@ describe("test user wallets", () => {
         assert.equal(mnemonic.deriveKey(0).generatePublicKey().toAddress().bech32(), "drt1l8g9dk3gz035gkjhwegsjkqzdu3augrwhcfxrnucnyyrpc2220pq4flasr");
         assert.equal(mnemonic.deriveKey(1).generatePublicKey().toAddress().bech32(), "drt1fmhwg84rldg0xzngf53m0y607wvefvamh07n2mkypedx27lcqntsg78vxl");
         assert.equal(mnemonic.deriveKey(2).generatePublicKey().toAddress().bech32(), "drt1tyuyemt4xz2yjvc7rxxp8kyfmk2n3h8gv3aavzd9ru4v2vhrkcksuhwdgv");
+
+        assert.equal(mnemonic.deriveKey(0).generatePublicKey().toAddress("test").bech32(), "test1l8g9dk3gz035gkjhwegsjkqzdu3augrwhcfxrnucnyyrpc2220pqc6tnnf");
+        assert.equal(mnemonic.deriveKey(1).generatePublicKey().toAddress("xdrt").bech32(), "xdrt1fmhwg84rldg0xzngf53m0y607wvefvamh07n2mkypedx27lcqnts0f2w3t");
+        assert.equal(mnemonic.deriveKey(2).generatePublicKey().toAddress("ydrt").bech32(), "ydrt1tyuyemt4xz2yjvc7rxxp8kyfmk2n3h8gv3aavzd9ru4v2vhrkckswmkvs2");
     });
 
     it("should create secret key", () => {
@@ -346,6 +350,10 @@ describe("test user wallets", () => {
         assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 0).getAddress().bech32(), "drt1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ssey5egf");
         assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 1).getAddress().bech32(), "drt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqlqde3c");
         assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 2).getAddress().bech32(), "drt1k2s324ww2g0yj38qn2ch2jwctdy8mnfxep94q9arncc6xecg3xaq889n6e");
+
+        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 0).getAddress("test").bech32(), "test1qyu5wthldzr8wx5c9ucg8kjagg0jfs53s8nr3zpz3hypefsdd8ss5hqhtr");
+        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 1).getAddress("xdrt").bech32(), "xdrt1spyavw0956vq68xj8y4tenjpq2wd5a9p2c6j8gsz7ztyrnpxrruqchqmxv");
+        assert.equal(UserSigner.fromWallet(keyFileObjectWithMnemonic, password, 2).getAddress("ydrt").bech32(), "ydrt1k2s324ww2g0yj38qn2ch2jwctdy8mnfxep94q9arncc6xecg3xaq4tajzl");
     });
 
     it("should throw error when decrypting secret key with keystore-mnemonic file", async function () {
