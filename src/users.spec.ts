@@ -43,11 +43,13 @@ describe("test user wallets", () => {
     });
 
     it("should create secret key", () => {
-        let keyHex = alice.secretKeyHex;
-        let fromBuffer = new UserSecretKey(Buffer.from(keyHex, "hex"));
-        let fromHex = UserSecretKey.fromString(keyHex);
+        const keyHex = alice.secretKeyHex;
+        const fromBuffer = new UserSecretKey(Buffer.from(keyHex, "hex"));
+        const fromArray = new UserSecretKey(Uint8Array.from(Buffer.from(keyHex, "hex")));
+        const fromHex = UserSecretKey.fromString(keyHex);
 
         assert.equal(fromBuffer.hex(), keyHex);
+        assert.equal(fromArray.hex(), keyHex);
         assert.equal(fromHex.hex(), keyHex);
     });
 
@@ -217,9 +219,11 @@ describe("test user wallets", () => {
         let serialized = transaction.serializeForSigning();
         let signature = await signer.sign(serialized);
 
+        assert.deepEqual(await signer.sign(serialized), await signer.sign(Uint8Array.from(serialized)));
         assert.equal(serialized.toString(), `{"nonce":0,"value":"0","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"","gasPrice":1000000000,"gasLimit":50000,"data":"Zm9v","chainID":"1","version":1}`);
         assert.equal(signature.toString("hex"), "0f7653c6baee0b61cd5e655a646038b0cccfb868d4664f1e14b521ba56fd5f4b49465273f4cd814656dbf6e4bb4830f526f51d94a5a15f4911b6085a5f952501");
         assert.isTrue(verifier.verify(serialized, signature));
+        
         // Without data field
         transaction = new TestTransaction({
             nonce: 8,
@@ -233,6 +237,7 @@ describe("test user wallets", () => {
         serialized = transaction.serializeForSigning();
         signature = await signer.sign(serialized);
 
+        assert.deepEqual(await signer.sign(serialized), await signer.sign(Uint8Array.from(serialized)));
         assert.equal(serialized.toString(), `{"nonce":8,"value":"10000000000000000000","receiver":"drt1cux02zersde0l7hhklzhywcxk4u9n4py5tdxyx7vrvhnza2r4gmqgsejha","sender":"","gasPrice":1000000000,"gasLimit":50000,"chainID":"1","version":1}`);
         assert.equal(signature.toString("hex"), "523bd77e6b139c67e0c79fe048460e3107884d95260a5357386be5b7dae80a36451bf83148bdabd100124c148d8f80bbe19926b9701bada3011a72bf642ad70e");
     });
@@ -304,7 +309,10 @@ describe("test user wallets", () => {
             chainID: "1"
         });
 
-        const signature = await signer.sign(transaction.serializeForSigning());
+        const serialized = transaction.serializeForSigning();
+        const signature = await signer.sign(serialized);
+
+        assert.deepEqual(await signer.sign(serialized), await signer.sign(Uint8Array.from(serialized)));
         assert.equal(signature.toString("hex"), "9b211b30d96125627696725d323a0e49ecd3bf19d5079009499ee2204b32b426b7225a268d4b6358eb1c976c2626e64fe0038a8d7a5ff89cba6b1d7969874b02");
     });
 
@@ -320,8 +328,11 @@ describe("test user wallets", () => {
         const data = message.serializeForSigning();
         const signature = await signer.sign(data);
 
+        assert.deepEqual(await signer.sign(data), await signer.sign(Uint8Array.from(data)));
         assert.isTrue(verifier.verify(data, signature));
+        assert.isTrue(verifier.verify(Uint8Array.from(data), Uint8Array.from(signature)));
         assert.isFalse(verifier.verify(Buffer.from("hello"), signature));
+        assert.isFalse(verifier.verify(new TextEncoder().encode("hello"), signature));
     });
 
     it("should create UserSigner from wallet", async function () {
