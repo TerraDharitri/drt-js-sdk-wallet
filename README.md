@@ -4,7 +4,6 @@ Core wallet components (generation, signing) for TypeScript (JavaScript).
 
 ## CHANGELOG
 
-[CHANGELOG](CHANGELOG.md)
 
 ## Distribution
 
