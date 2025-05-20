@@ -1,6 +1,6 @@
 # Dharitri SDK for JavaScript and TypeScript: wallet components
 
-Wallet components (generation, signing) for TypeScript (JavaScript). 
+Wallet components (generation, signing) for TypeScript (JavaScript).
 
 ## Distribution
 
@@ -17,6 +17,14 @@ npm install @terradharitri/sdk-wallet
 ## Development
 
 Feel free to skip this section if you are not a contributor.
+
+### Additional dependencies
+
+Instanbul, for code coverage:
+
+```
+npm install --no-save nyc
+```
 
 ### Building the library
 
