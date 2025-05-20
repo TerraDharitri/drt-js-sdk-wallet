@@ -1,6 +1,7 @@
 import { guardLength } from "./assertions";
 import { ErrInvariantFailed } from "./errors";
 import { parseValidatorKey } from "./pem";
+
 const bls = require('@terradharitri/sdk-bls-wasm');
 
 export const VALIDATOR_SECRETKEY_LENGTH = 32;
